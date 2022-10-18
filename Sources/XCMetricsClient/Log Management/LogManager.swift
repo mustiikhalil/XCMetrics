@@ -78,6 +78,7 @@ class LogManagerImplementation: LogManager {
     private static let cacheDirectoryName = "XCMetrics"
 
     private let projectName: String
+    private let shouldOverrideDirectory: Bool
     private let fileAccessor: FileAccessor
     private let logCopier: LogCopier
     private let dateProvider: () -> Date
@@ -85,12 +86,14 @@ class LogManagerImplementation: LogManager {
 
     init(
         projectName: String,
+        shouldOverrideDirectory: Bool,
         fileAccessor: FileAccessor = FileManagerAccessor(.default),
         logCopier: LogCopier? = nil,
         dateProvider: @escaping () -> Date = Date.init,
         sleepFunction: @escaping (UInt32) -> (UInt32) = sleep
     ) {
         self.projectName = projectName
+        self.shouldOverrideDirectory = shouldOverrideDirectory
         self.fileAccessor = fileAccessor
         self.logCopier = logCopier ?? ZipValidatorLogCopier(fileAccessor: fileAccessor)
         self.dateProvider = dateProvider
@@ -261,16 +264,27 @@ extension LogManagerImplementation {
     }
 
     private func findXCActivityLogsInDirectoriesSorted(_ buildDirectory: String) -> [FileEntry] {
-        let xcodeLogsDirectoryURL = URL.makeBuildLogsDirectory(for: buildDirectory)
-        let xcodeArchiveLogsDirectoryURL = URL.makeBuildLogsDirectoryWhenArchiving(for: buildDirectory)
-
-        let buildLogs = (try? findXCActivityLogsInDirectory(xcodeLogsDirectoryURL)) ?? []
-        let archiveLogs = (try? findXCActivityLogsInDirectory(xcodeArchiveLogsDirectoryURL)) ?? []
-        return (buildLogs + archiveLogs).sorted(by: { (lhs, rhs) -> Bool in
+        let logs = findXCActivityLogsInDirectoriesOrCustomDirectory(buildDirectory)
+        return (logs).sorted(by: { (lhs, rhs) -> Bool in
             let lhDate = lhs.modificationDate ?? Date.distantPast
             let rhDate = rhs.modificationDate ?? Date.distantPast
             return lhDate.compare(rhDate) == .orderedDescending
         })
+    }
+
+    private func findXCActivityLogsInDirectoriesOrCustomDirectory(_ buildDirectory: String) -> [FileEntry] {
+        if shouldOverrideDirectory {
+            let url = URL(fileURLWithPath: buildDirectory)
+            let buildLogs = (try? findXCActivityLogsInDirectory(url)) ?? []
+            return buildLogs
+        } else {
+            let xcodeLogsDirectoryURL = URL.makeBuildLogsDirectory(for: buildDirectory)
+            let xcodeArchiveLogsDirectoryURL = URL.makeBuildLogsDirectoryWhenArchiving(for: buildDirectory)
+
+            let buildLogs = (try? findXCActivityLogsInDirectory(xcodeLogsDirectoryURL)) ?? []
+            let archiveLogs = (try? findXCActivityLogsInDirectory(xcodeArchiveLogsDirectoryURL)) ?? []
+            return buildLogs + archiveLogs
+        }
     }
 
     private func retrieveOrCreateCachedLogsURL() throws -> URL {

@@ -49,6 +49,7 @@ class MetricsUploaderLogicTests: XCTestCase {
                                                additionalHeaders: additionalHeaders,
                                                timeout: 1,
                                                isCI: false,
+                                               shouldOverrideDirectory: false,
                                                plugins: [],
                                                skipNotes: false,
                                                truncLargeIssues: false)

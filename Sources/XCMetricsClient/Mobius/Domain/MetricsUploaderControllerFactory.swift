@@ -35,12 +35,15 @@ enum ControllerFactory {
             additionalHeaders: command.additionalHeaders,
             timeout: command.timeout,
             isCI: command.isCI,
+            shouldOverrideDirectory: command.shouldOverrideDirectory,
             plugins: plugins,
             skipNotes: command.skipNotes,
             truncLargeIssues: command.truncLargeIssues
         )
         let initEffect = MetricsUploaderEffect.findLogs(buildDirectory: model.buildDirectory, timeout: model.timeout)
-        let logManager = LogManagerImplementation(projectName: model.projectName)
+        let logManager = LogManagerImplementation(
+            projectName: model.projectName,
+            shouldOverrideDirectory: model.shouldOverrideDirectory)
 
         let effectRouter = EffectRouter<MetricsUploaderEffect, MetricsUploaderEvent>()
             .routeCase(MetricsUploaderEffect.findLogs).to(LogsFinderEffectHandler(logManager: logManager))

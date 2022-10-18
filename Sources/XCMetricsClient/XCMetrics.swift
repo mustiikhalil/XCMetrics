@@ -70,6 +70,7 @@ struct Command {
     let projectName: String
     let timeout: Int
     let serviceURL: String
+    let shouldOverrideDirectory: Bool
     let isCI: Bool
     let skipNotes: Bool
     let additionalHeaders: [String: String]
@@ -105,6 +106,10 @@ public struct XCMetrics: ParsableCommand {
     /// If the metrics collected are coming from CI or not provided as argument. Default value is false.
     @Option(name: [.customLong("isCI")], help: "If the metrics collected are coming from CI or not.")
     public var isCI: Bool = false
+
+    /// If the `buildDir` is passed as the logs directory. Default value is false.
+    @Option(name: [.customLong("shouldOverrideDirectory")], help: "If the `buildDir` is passed as the logs directory")
+    public var shouldOverrideDirectory: Bool = false
 
     /// If the Notes found in log should be skipped. Useful when there are thousands of notes to
     /// reduce the size of the Database.
@@ -188,7 +193,7 @@ public struct XCMetrics: ParsableCommand {
         } else {
             throw argumentError()
         }
-        
+
         let additionalHeader: [String: String] = try AdditionalHeaderFactory.make(authorizationKey: authorizationKey,
                                                                                   authorizationValue: authorizationValue,
                                                                                   additionalHeader: additionalHeaderJson)
@@ -198,6 +203,7 @@ public struct XCMetrics: ParsableCommand {
             projectName: name,
             timeout: timeout,
             serviceURL: serviceURLValue,
+            shouldOverrideDirectory: shouldOverrideDirectory,
             isCI: isCI,
             skipNotes: skipNotes,
             additionalHeaders: additionalHeader,

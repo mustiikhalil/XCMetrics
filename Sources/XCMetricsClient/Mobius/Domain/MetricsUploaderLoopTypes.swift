@@ -36,6 +36,8 @@ struct MetricsUploaderModel: Equatable, Hashable {
     let timeout: Int
     /// Whether or not this build was performed in a continuous integration environment.
     let isCI: Bool
+    /// Uses the absolute path to look for logs instead.
+    let shouldOverrideDirectory: Bool
     /// The custom provided plugins.
     let plugins: [XCMetricsPlugin]
     /// The log upload requests in this run.
@@ -54,6 +56,7 @@ struct MetricsUploaderModel: Equatable, Hashable {
         additionalHeaders: [String: String],
         timeout: Int,
         isCI: Bool,
+        shouldOverrideDirectory: Bool,
         plugins: [XCMetricsPlugin],
         parsedRequests: Set<MetricsUploadRequest> = Set(),
         awaitingParsingLogResponses: Int = 0,
@@ -67,6 +70,7 @@ struct MetricsUploaderModel: Equatable, Hashable {
         self.plugins = plugins
         self.timeout = timeout
         self.isCI = isCI
+        self.shouldOverrideDirectory = shouldOverrideDirectory
         self.parsedRequests = parsedRequests
         self.awaitingParsingResultsCount = awaitingParsingLogResponses
         self.skipNotes = skipNotes
@@ -81,6 +85,7 @@ struct MetricsUploaderModel: Equatable, Hashable {
         self.plugins = []
         self.timeout = 0
         self.isCI = false
+        self.shouldOverrideDirectory = false
         self.parsedRequests = []
         self.awaitingParsingResultsCount = 0
         self.skipNotes = false
@@ -97,6 +102,7 @@ extension MetricsUploaderModel: CustomDebugStringConvertible {
         plugins: \(plugins),
         timeout: \(timeout),
         isCI: \(isCI),
+        shouldOverrideDirectory: \(shouldOverrideDirectory),
         parsedRequests: \(parsedRequests.count),
         awaitingParsingLogResponses: \(awaitingParsingResultsCount)
         skipNotes: \(skipNotes)

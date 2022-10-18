@@ -94,6 +94,7 @@ class LogManagerImplementationTests: XCTestCase {
         dateToProvide = referenceDate
         logManager = LogManagerImplementation(
             projectName: projectName,
+            shouldOverrideDirectory: false,
             fileAccessor: mockFileAccessor,
             logCopier: mockLogCopier,
             dateProvider: { self.dateToProvide },
@@ -115,6 +116,26 @@ class LogManagerImplementationTests: XCTestCase {
         ])
         _ = try logManager.retrieveXcodeLogs(in: "/Users/username/repo-path/build/DerivedData/Build/Intermediates.noindex/ArchiveIntermediates/Spotify/BuildProductsPath", timeout: 0)
 
+        XCTAssertEqual(Set(mockFileAccessor.entriesLookups), expectedURLs)
+    }
+
+    func testRetrivingXcodeLogsSearchesInLogsCustomDirectories() throws {
+        mockFileAccessor = MockFileAccessor()
+        mockLogCopier = MockLogCopier()
+        dateToProvide = referenceDate
+        logManager = LogManagerImplementation(
+            projectName: projectName,
+            shouldOverrideDirectory: true,
+            fileAccessor: mockFileAccessor,
+            logCopier: mockLogCopier,
+            dateProvider: { self.dateToProvide },
+            sleepFunction: { self.sleepFunction($0); return 0 }
+        )
+
+        let expectedURLs = Set([
+            URL(fileURLWithPath: "/Users/username/repo-path/build/custom"),
+        ])
+        _ = try logManager.retrieveXcodeLogs(in: "/Users/username/repo-path/build/custom", timeout: 0)
         XCTAssertEqual(Set(mockFileAccessor.entriesLookups), expectedURLs)
     }
 
@@ -352,7 +373,31 @@ class LogManagerImplementationTests: XCTestCase {
             ]
         ]
 
-        let logManager = LogManagerImplementation(projectName: projectName, fileAccessor: mockFileAccessor)
+        let logManager = LogManagerImplementation(
+            projectName: projectName,
+            shouldOverrideDirectory: false,
+            fileAccessor: mockFileAccessor)
+        let cached = try logManager.retrieveLogRequestsToUpload()
+
+        XCTAssertEqual(Set(cached), Set([log1UploadRequestURL, log2UploadRequestURL]))
+    }
+
+    func testLogsToUploadRetrievalWithFlagEnabled() throws {
+        let log1 = try! TemporaryFile.newFile(prefix: "log1", suffix: ".xcactivitylog")
+        let log2 = try! TemporaryFile.newFile(prefix: "log2", suffix: ".xcactivitylog")
+        let log1UploadRequestURL = writeUploadBuildMetricsRequest(at: log1.url)
+        let log2UploadRequestURL = writeUploadBuildMetricsRequest(at: log2.url)
+        mockFileAccessor.entriesOfDirectoryToReturn = [
+            URL(fileURLWithPath: "Cache/XCMetrics/MyProject/requests").path: [
+                FileEntry(url: log1UploadRequestURL, modificationDate: referenceDate),
+                FileEntry(url: log2UploadRequestURL, modificationDate: referenceDate)
+            ]
+        ]
+
+        let logManager = LogManagerImplementation(
+            projectName: projectName,
+            shouldOverrideDirectory: true,
+            fileAccessor: mockFileAccessor)
         let cached = try logManager.retrieveLogRequestsToUpload()
 
         XCTAssertEqual(Set(cached), Set([log1UploadRequestURL, log2UploadRequestURL]))

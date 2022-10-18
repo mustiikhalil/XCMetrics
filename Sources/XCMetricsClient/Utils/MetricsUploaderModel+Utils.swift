@@ -32,6 +32,7 @@ extension MetricsUploaderModel {
             additionalHeaders: self.additionalHeaders,
             timeout: self.timeout,
             isCI: self.isCI,
+            shouldOverrideDirectory: self.shouldOverrideDirectory,
             plugins: self.plugins,
             parsedRequests: parsedRequests ?? self.parsedRequests,
             awaitingParsingLogResponses: awaitingParsingLogResponses ?? self.awaitingParsingResultsCount,
